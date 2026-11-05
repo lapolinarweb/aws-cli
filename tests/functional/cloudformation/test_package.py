@@ -35,7 +35,7 @@ class TestPackageZipFiles(TestCase):
 
     @skip_if_windows(
         "Symlinks are not supported on Python 2.x + Windows, and require "
-        "administrator privleges on Python 3.x + Windows."
+        "administrator privileges on Python 3.x + Windows."
     )
     def test_must_follow_symlinks(self):
         data = "hello world"
@@ -54,8 +54,8 @@ class TestPackageZipFiles(TestCase):
         # Now verify that the zipfile includes contents of the data file we created
         myzip = zipfile.ZipFile(zipfile_path)
         # Data file should be the only file within the zip
-        self.assertEquals(["data-link.txt"], myzip.namelist())
+        self.assertEqual(["data-link.txt"], myzip.namelist())
         myfile = myzip.open("data-link.txt", "r")
 
         # Its content should be equal the value we wrote.
-        self.assertEquals(data.encode("utf-8"), myfile.read())
+        self.assertEqual(data.encode("utf-8"), myfile.read())

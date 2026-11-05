@@ -10,18 +10,16 @@
 # distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
-import mock
-from awscli.compat import six
-
 from awscli.customizations import preview
-from awscli.testutils import BaseAWSCommandParamsTest
+from awscli.compat import StringIO
+from awscli.testutils import mock, BaseAWSCommandParamsTest
 
 
 class TestPreviewMode(BaseAWSCommandParamsTest):
 
     def setUp(self):
         super(TestPreviewMode, self).setUp()
-        self.stderr = six.StringIO()
+        self.stderr = StringIO()
         self.stderr_patch = mock.patch('sys.stderr', self.stderr)
         self.stderr_patch.start()
         self.full_config = {'profiles': {}}

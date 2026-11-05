@@ -13,9 +13,9 @@
 
 import json
 
+from awscli.testutils import mock
 from tests.unit.customizations.emr import EMRBaseAWSCommandParamsTest as \
     BaseAWSCommandParamsTest
-from mock import patch
 
 describe_cluster_result_mock_ig = {
     "Cluster": {
@@ -115,6 +115,7 @@ list_instance_groups_result_mock = {
             "Name": "Master instance group",
             "InstanceGroupType": "MASTER",
             "InstanceType": "m1.large",
+            "CustomAmiId": "ami-deadbeef",
             "Id": "ig-ABCD",
             "Market": "ON_DEMAND",
             "RunningInstanceCount": 0
@@ -136,6 +137,7 @@ list_instance_groups_result_mock = {
             "Name": "Core instance group",
             "InstanceGroupType": "CORE",
             "InstanceType": "m1.large",
+            "CustomAmiId": "ami-deadpork",
             "Id": "ig-DEF",
             "Market": "ON_DEMAND",
             "RunningInstanceCount": 0
@@ -170,13 +172,29 @@ list_instance_fleets_result_mock = {
                     "WeightedCapacity": 1,
                     "BidPrice": "1",
                     "InstanceType": "m3.xlarge",
+                    "CustomAmiId": "ami-deadbeef",
                     "BidPriceAsPercentageOfOnDemandPrice": 0.0
                 }
             ],
+            "LaunchSpecifications" : {
+                "SpotSpecification": {"TimeoutDurationMinutes": 77, "TimeoutAction": "TERMINATE_CLUSTER",
+                                        "AllocationStrategy": "capacity-optimized-prioritized"},
+                "OnDemandSpecification": {"AllocationStrategy": "lowest-price"}
+            },
+            "ResizeSpecifications": {
+                "OnDemandResizeSpecification": {"AllocationStrategy": "lowest-price",
+                    "CapacityReservationOptions": {
+                        "CapacityReservationPreference": "open",
+                        "UsageStrategy": "use-capacity-reservations-first"
+                    }
+                },
+                "SpotResizeSpecification": {"AllocationStrategy": "capacity-optimized"}
+            },
             "Name": "Master instance group",
             "InstanceFleetType": "MASTER",
             "InstanceType": "m1.large",
             "Id": "if-ABCD",
+            "Context": "testContext"
         }
     ]
 }
@@ -224,6 +242,7 @@ EXPECTED_RESULT_IG = {
                 "Name": "Master instance group",
                 "InstanceGroupType": "MASTER",
                 "InstanceType": "m1.large",
+                "CustomAmiId": "ami-deadbeef",
                 "Market": "ON_DEMAND",
                 "Id": "ig-ABCD"
             },
@@ -245,6 +264,7 @@ EXPECTED_RESULT_IG = {
                 "Name": "Core instance group",
                 "InstanceGroupType": "CORE",
                 "InstanceType": "m1.large",
+                "CustomAmiId": "ami-deadpork",
                 "Market": "ON_DEMAND",
                 "Id": "ig-DEF"
             }
@@ -318,13 +338,29 @@ EXPECTED_RESULT_IF = {
                         "WeightedCapacity": 1,
                         "BidPrice": "1",
                         "InstanceType": "m3.xlarge",
+                        "CustomAmiId": "ami-deadbeef",
                         "BidPriceAsPercentageOfOnDemandPrice": 0.0
                     }
                 ],
+                "LaunchSpecifications" : {
+                    "SpotSpecification": {"TimeoutDurationMinutes": 77, "TimeoutAction": "TERMINATE_CLUSTER",
+                                          "AllocationStrategy": "capacity-optimized-prioritized"},
+                    "OnDemandSpecification": {"AllocationStrategy": "lowest-price"}
+                },
+                "ResizeSpecifications": {
+                    "OnDemandResizeSpecification": {"AllocationStrategy": "lowest-price",
+                        "CapacityReservationOptions": {
+                            "CapacityReservationPreference": "open",
+                            "UsageStrategy": "use-capacity-reservations-first"
+                        }
+                    },
+                    "SpotResizeSpecification": {"AllocationStrategy": "capacity-optimized"}
+                },
                 "Name": "Master instance group",
                 "InstanceFleetType": "MASTER",
                 "InstanceType": "m1.large",
                 "Id": "if-ABCD",
+                "Context": "testContext"
             }
         ],
         "RequestedAmiVersion": "2.4.2",
@@ -365,7 +401,7 @@ EXPECTED_RESULT_IF = {
 class TestDescribeCluster(BaseAWSCommandParamsTest):
     prefix = 'emr describe-cluster'
 
-    @patch('awscli.customizations.emr.emr.DescribeCluster._construct_result')
+    @mock.patch('awscli.customizations.emr.emr.DescribeCluster._construct_result')
     def test_operations_called(self, construct_result_patch):
         construct_result_patch.return_value = dict()
 
@@ -389,7 +425,7 @@ class TestDescribeCluster(BaseAWSCommandParamsTest):
         self.assertEqual(self.operations_called[2][1]['ClusterId'],
                          'j-ABCD')
 
-    @patch('awscli.customizations.emr.emr.DescribeCluster._call')
+    @mock.patch('awscli.customizations.emr.emr.DescribeCluster._call')
     def test_constructed_result_ig(self, call_patch):
         call_patch.side_effect = side_effect_of_call_ig
 
@@ -397,9 +433,9 @@ class TestDescribeCluster(BaseAWSCommandParamsTest):
         cmdline = self.prefix + args
         result = self.run_cmd(cmdline, expected_rc=0)
         result_json = json.loads(result[0])
-        self.assertEquals(result_json, EXPECTED_RESULT_IG)
+        self.assertEqual(result_json, EXPECTED_RESULT_IG)
 
-    @patch('awscli.customizations.emr.emr.DescribeCluster._call')
+    @mock.patch('awscli.customizations.emr.emr.DescribeCluster._call')
     def test_constructed_result_if(self, call_patch):
         call_patch.side_effect = side_effect_of_call_if
 
@@ -407,7 +443,7 @@ class TestDescribeCluster(BaseAWSCommandParamsTest):
         cmdline = self.prefix + args
         result = self.run_cmd(cmdline, expected_rc=0)
         result_json = json.loads(result[0])
-        self.assertEquals(result_json, EXPECTED_RESULT_IF)
+        self.assertEqual(result_json, EXPECTED_RESULT_IF)
 
 def side_effect_of_call_ig(*args, **kwargs):
     if args[1] == 'describe_cluster':

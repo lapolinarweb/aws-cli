@@ -12,12 +12,10 @@
 # language governing permissions and limitations under the License.
 import datetime
 
-from mock import Mock, patch
-
 from awscli.customizations.s3.filegenerator import FileStat
-from awscli.customizations.s3.syncstrategy.base import BaseSync, \
+from awscli.customizations.s3.syncstrategy.base import AlwaysSync, BaseSync, \
     SizeAndLastModifiedSync, MissingFileSync, NeverSync
-from awscli.testutils import unittest
+from awscli.testutils import mock, unittest
 
 
 class TestBaseSync(unittest.TestCase):
@@ -39,7 +37,7 @@ class TestBaseSync(unittest.TestCase):
         """
         Ensures that the class registers all of the necessary handlers
         """
-        session = Mock()
+        session = mock.Mock()
         self.sync_strategy.register_strategy(session)
         register_args = session.register.call_args_list
         self.assertEqual(register_args[0][0][0],
@@ -290,6 +288,33 @@ class TestMissingFileSync(unittest.TestCase):
         should_sync = self.sync_strategy.determine_should_sync(
             src_file, None)
         self.assertTrue(should_sync)
+
+
+class TestAlwaysSync:
+    def test_determine_should_sync(self):
+        always_sync = AlwaysSync()
+        time = datetime.datetime.now()
+        src_file = FileStat(
+            src='',
+            dest='',
+            compare_key='test.py',
+            size=10,
+            last_update=time,
+            src_type='s3',
+            dest_type='local',
+            operation_name='download',
+        )
+        dest_file = FileStat(
+            src='',
+            dest='',
+            compare_key='test.py',
+            size=10,
+            last_update=time,
+            src_type='local',
+            dest_type='s3',
+            operation_name='',
+        )
+        assert always_sync.determine_should_sync(src_file, dest_file) is True
 
 
 if __name__ == "__main__":

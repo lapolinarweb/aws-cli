@@ -10,13 +10,13 @@
 # distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
-import mock
-
 from botocore.waiter import WaiterModel
 from botocore.exceptions import DataNotFoundError
 
-from awscli.testutils import unittest, BaseAWSHelpOutputTest, \
-    BaseAWSCommandParamsTest
+from awscli.testutils import (
+    mock, unittest,
+    BaseAWSHelpOutputTest,BaseAWSCommandParamsTest
+)
 from awscli.customizations.waiters import add_waiters, WaitCommand, \
     get_waiter_model_from_service_model, WaiterStateCommand, WaiterCaller, \
     WaiterStateDocBuilder, WaiterStateCommandBuilder
@@ -153,7 +153,7 @@ class TestWaitHelpOutput(BaseAWSHelpOutputTest):
 class TestWait(BaseAWSCommandParamsTest):
     """ This is merely a smoke test.
 
-    Its purpose is to test that the wait command can be run proberly for
+    Its purpose is to test that the wait command can be run properly for
     various services. It is by no means exhaustive.
     """
     def test_ec2_instance_running(self):
@@ -181,7 +181,7 @@ class TestWait(BaseAWSCommandParamsTest):
         self.parsed_response = {'Table': {'TableStatus': 'ACTIVE'}}
         self.assert_params_for_cmd(cmdline, result)
 
-    def test_elastictranscoder_jobs_complete(self):
+    def test_rdb_jobs_complete(self):
         cmdline = 'rds wait db-instance-available'
         cmdline += ' --db-instance-identifier abc'
         result = {'DBInstanceIdentifier': 'abc'}

@@ -10,11 +10,10 @@
 # distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
-import mock
 import os
 
 from awscli.customizations.configure.set import ConfigureSetCommand
-from awscli.testutils import unittest
+from awscli.testutils import mock, unittest
 from . import FakeSession
 
 
@@ -32,14 +31,16 @@ class TestConfigureSetCommand(unittest.TestCase):
             self.session, self.config_writer)
         set_command(args=['region', 'us-west-2'], parsed_globals=None)
         self.config_writer.update_config.assert_called_with(
-            {'__section__': 'default', 'region': 'us-west-2'}, 'myconfigfile')
+            {'__section__': 'default', 'region': 'us-west-2'}, 'myconfigfile',
+            check_permissions=False)
 
     def test_configure_set_command_dotted(self):
         set_command = ConfigureSetCommand(
             self.session, self.config_writer)
         set_command(args=['preview.emr', 'true'], parsed_globals=None)
         self.config_writer.update_config.assert_called_with(
-            {'__section__': 'preview', 'emr': 'true'}, 'myconfigfile')
+            {'__section__': 'preview', 'emr': 'true'}, 'myconfigfile',
+            check_permissions=False)
 
     def test_configure_set_command_dotted_with_default_profile(self):
         self.session.variables['profile'] = 'default'
@@ -49,7 +50,8 @@ class TestConfigureSetCommand(unittest.TestCase):
             args=['emr.instance_profile', 'my_ip_emr'], parsed_globals=None)
         self.config_writer.update_config.assert_called_with(
             {'__section__': 'default',
-             'emr': {'instance_profile': 'my_ip_emr'}}, 'myconfigfile')
+             'emr': {'instance_profile': 'my_ip_emr'}}, 'myconfigfile',
+            check_permissions=False)
 
     def test_configure_set_handles_predefined_plugins_section(self):
         self.session.variables['profile'] = 'default'
@@ -59,7 +61,8 @@ class TestConfigureSetCommand(unittest.TestCase):
             args=['plugins.foo', 'mypackage'], parsed_globals=None)
         self.config_writer.update_config.assert_called_with(
             {'__section__': 'plugins',
-             'foo': 'mypackage'}, 'myconfigfile')
+             'foo': 'mypackage'}, 'myconfigfile',
+            check_permissions=False)
 
     def test_configure_set_command_dotted_with_profile(self):
         self.session.profile = 'emr-dev'
@@ -69,7 +72,8 @@ class TestConfigureSetCommand(unittest.TestCase):
             args=['emr.instance_profile', 'my_ip_emr'], parsed_globals=None)
         self.config_writer.update_config.assert_called_with(
             {'__section__': 'profile emr-dev', 'emr':
-                {'instance_profile': 'my_ip_emr'}}, 'myconfigfile')
+                {'instance_profile': 'my_ip_emr'}}, 'myconfigfile',
+            check_permissions=False)
 
     def test_configure_set_with_profile(self):
         self.session.profile = 'testing'
@@ -78,7 +82,7 @@ class TestConfigureSetCommand(unittest.TestCase):
         set_command(args=['region', 'us-west-2'], parsed_globals=None)
         self.config_writer.update_config.assert_called_with(
             {'__section__': 'profile testing', 'region': 'us-west-2'},
-            'myconfigfile')
+            'myconfigfile', check_permissions=False)
 
     def test_configure_set_triple_dotted(self):
         # aws configure set default.s3.signature_version s3v4
@@ -88,7 +92,7 @@ class TestConfigureSetCommand(unittest.TestCase):
                     parsed_globals=None)
         self.config_writer.update_config.assert_called_with(
             {'__section__': 'default', 's3': {'signature_version': 's3v4'}},
-            'myconfigfile')
+            'myconfigfile', check_permissions=False)
 
     def test_configure_set_with_profile_nested(self):
         # aws configure set default.s3.signature_version s3v4
@@ -98,7 +102,8 @@ class TestConfigureSetCommand(unittest.TestCase):
                     parsed_globals=None)
         self.config_writer.update_config.assert_called_with(
             {'__section__': 'profile foo',
-             's3': {'signature_version': 's3v4'}}, 'myconfigfile')
+             's3': {'signature_version': 's3v4'}}, 'myconfigfile',
+            check_permissions=False)
 
     def test_access_key_written_to_shared_credentials_file(self):
         set_command = ConfigureSetCommand(
@@ -107,7 +112,8 @@ class TestConfigureSetCommand(unittest.TestCase):
                     parsed_globals=None)
         self.config_writer.update_config.assert_called_with(
             {'__section__': 'default',
-             'aws_access_key_id': 'foo'}, self.fake_credentials_filename)
+             'aws_access_key_id': 'foo'}, self.fake_credentials_filename,
+            check_permissions=True)
 
     def test_secret_key_written_to_shared_credentials_file(self):
         set_command = ConfigureSetCommand(
@@ -116,7 +122,8 @@ class TestConfigureSetCommand(unittest.TestCase):
                     parsed_globals=None)
         self.config_writer.update_config.assert_called_with(
             {'__section__': 'default',
-             'aws_secret_access_key': 'foo'}, self.fake_credentials_filename)
+             'aws_secret_access_key': 'foo'}, self.fake_credentials_filename,
+            check_permissions=True)
 
     def test_session_token_written_to_shared_credentials_file(self):
         set_command = ConfigureSetCommand(
@@ -125,7 +132,18 @@ class TestConfigureSetCommand(unittest.TestCase):
                     parsed_globals=None)
         self.config_writer.update_config.assert_called_with(
             {'__section__': 'default',
-             'aws_session_token': 'foo'}, self.fake_credentials_filename)
+             'aws_session_token': 'foo'}, self.fake_credentials_filename,
+            check_permissions=True)
+
+    def test_security_token_written_to_shared_credentials_file(self):
+        set_command = ConfigureSetCommand(
+            self.session, self.config_writer)
+        set_command(args=['aws_security_token', 'foo'],
+                    parsed_globals=None)
+        self.config_writer.update_config.assert_called_with(
+            {'__section__': 'default',
+             'aws_security_token': 'foo'}, self.fake_credentials_filename,
+             check_permissions=True)
 
     def test_access_key_written_to_shared_credentials_file_profile(self):
         set_command = ConfigureSetCommand(
@@ -134,7 +152,8 @@ class TestConfigureSetCommand(unittest.TestCase):
                     parsed_globals=None)
         self.config_writer.update_config.assert_called_with(
             {'__section__': 'foo',
-             'aws_access_key_id': 'bar'}, self.fake_credentials_filename)
+             'aws_access_key_id': 'bar'}, self.fake_credentials_filename,
+            check_permissions=True)
 
     def test_credential_set_profile_with_space(self):
         self.session.profile = 'some profile'
@@ -142,7 +161,8 @@ class TestConfigureSetCommand(unittest.TestCase):
         set_command(args=['aws_session_token', 'foo'], parsed_globals=None)
         self.config_writer.update_config.assert_called_with(
             {'__section__': 'some profile',
-             'aws_session_token': 'foo'}, self.fake_credentials_filename)
+             'aws_session_token': 'foo'}, self.fake_credentials_filename,
+            check_permissions=True)
 
     def test_credential_set_profile_with_space_dotted(self):
         set_command = ConfigureSetCommand(self.session, self.config_writer)
@@ -150,7 +170,8 @@ class TestConfigureSetCommand(unittest.TestCase):
                     parsed_globals=None)
         self.config_writer.update_config.assert_called_with(
             {'__section__': 'some profile',
-             'aws_session_token': 'foo'}, self.fake_credentials_filename)
+             'aws_session_token': 'foo'}, self.fake_credentials_filename,
+            check_permissions=True)
 
     def test_configure_set_with_profile_with_space(self):
         self.session.profile = 'some profile'
@@ -158,7 +179,7 @@ class TestConfigureSetCommand(unittest.TestCase):
         set_command(args=['region', 'us-west-2'], parsed_globals=None)
         self.config_writer.update_config.assert_called_with(
             {'__section__': "profile 'some profile'", 'region': 'us-west-2'},
-            'myconfigfile')
+            'myconfigfile', check_permissions=False)
 
     def test_configure_set_with_profile_with_space_dotted(self):
         set_command = ConfigureSetCommand(self.session, self.config_writer)
@@ -166,7 +187,7 @@ class TestConfigureSetCommand(unittest.TestCase):
                     parsed_globals=None)
         self.config_writer.update_config.assert_called_with(
             {'__section__': "profile 'some profile'", 'region': 'us-west-2'},
-            'myconfigfile')
+            'myconfigfile', check_permissions=False)
 
     def test_credential_set_profile_with_tab(self):
         self.session.profile = 'some\tprofile'
@@ -174,7 +195,8 @@ class TestConfigureSetCommand(unittest.TestCase):
         set_command(args=['aws_session_token', 'foo'], parsed_globals=None)
         self.config_writer.update_config.assert_called_with(
             {'__section__': 'some\tprofile',
-             'aws_session_token': 'foo'}, self.fake_credentials_filename)
+             'aws_session_token': 'foo'}, self.fake_credentials_filename,
+            check_permissions=True)
 
     def test_configure_set_with_profile_with_tab_dotted(self):
         set_command = ConfigureSetCommand(self.session, self.config_writer)
@@ -182,4 +204,4 @@ class TestConfigureSetCommand(unittest.TestCase):
                     parsed_globals=None)
         self.config_writer.update_config.assert_called_with(
             {'__section__': "profile 'some\tprofile'", 'region': 'us-west-2'},
-            'myconfigfile')
+            'myconfigfile', check_permissions=False)

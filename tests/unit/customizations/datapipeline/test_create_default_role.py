@@ -1,4 +1,5 @@
-import mock
+import pytest
+
 import awscli.customizations.datapipeline.createdefaultroles \
     as createdefaultroles
 from awscli.customizations.datapipeline.constants\
@@ -8,11 +9,12 @@ from awscli.customizations.datapipeline.constants\
     DATAPIPELINE_DEFAULT_RESOURCE_ROLE_ASSUME_POLICY
 
 from awscli.testutils import BaseAWSCommandParamsTest,\
-    unittest
+    mock, unittest
 from awscli.customizations.datapipeline.translator import dict_to_string
 from botocore.compat import json
 
 
+@pytest.mark.filterwarnings('ignore::UserWarning')
 class TestCreateDefaultRole(BaseAWSCommandParamsTest):
     prefix = 'datapipeline create-default-roles'
 
@@ -84,13 +86,13 @@ class TestCreateDefaultRole(BaseAWSCommandParamsTest):
     # Expected results: Operations are performed by the client to verify
     # existence of roles and then creation of roles (Service role,
     # resource role and instance profile)
-    @mock.patch('awscli.customizations.datapipeline.'
+    @mock.patch('awscli.customizations.datapipeline.createdefaultroles.'
                 'CreateDefaultRoles._construct_result')
-    @mock.patch('awscli.customizations.datapipeline.'
+    @mock.patch('awscli.customizations.datapipeline.createdefaultroles.'
                 'CreateDefaultRoles._check_if_role_exists')
-    @mock.patch('awscli.customizations.datapipeline.'
+    @mock.patch('awscli.customizations.datapipeline.createdefaultroles.'
                 'CreateDefaultRoles._check_if_instance_profile_exists')
-    @mock.patch('awscli.customizations.datapipeline.'
+    @mock.patch('awscli.customizations.datapipeline.createdefaultroles.'
                 'CreateDefaultRoles._get_role_policy')
     def test_default_roles_not_exist(self, get_rp_patch,
                                      role_exists_patch,
@@ -148,13 +150,13 @@ class TestCreateDefaultRole(BaseAWSCommandParamsTest):
     # Use case: Creating only DataPipeline service role
     # Expected output: The service role is created displaying a message
     # to the customer that a particular role with a policy has been created
-    @mock.patch('awscli.customizations.datapipeline.'
+    @mock.patch('awscli.customizations.datapipeline.createdefaultroles.'
                 'CreateDefaultRoles._get_role_policy')
-    @mock.patch('awscli.customizations.datapipeline.'
+    @mock.patch('awscli.customizations.datapipeline.createdefaultroles.'
                 'CreateDefaultRoles._create_role_with_role_policy')
-    @mock.patch('awscli.customizations.datapipeline.'
+    @mock.patch('awscli.customizations.datapipeline.createdefaultroles.'
                 'CreateDefaultRoles._check_if_instance_profile_exists')
-    @mock.patch('awscli.customizations.datapipeline.'
+    @mock.patch('awscli.customizations.datapipeline.createdefaultroles.'
                 'CreateDefaultRoles._check_if_role_exists')
     def test_constructed_result(self, role_exists_patch,
                                 instance_profile_exists_patch,
@@ -168,7 +170,7 @@ class TestCreateDefaultRole(BaseAWSCommandParamsTest):
         result = self.run_cmd(self.prefix, 0)
         expected_output = json.dumps(self.CONSTRUCTED_RESULT_OUTPUT,
                                      indent=4) + '\n'
-        self.assertEquals(result[0], expected_output)
+        self.assertEqual(result[0], expected_output)
 
     def toggle_for_check_if_exists(self, *args):
         if args[0] == DATAPIPELINE_DEFAULT_RESOURCE_ROLE_NAME:

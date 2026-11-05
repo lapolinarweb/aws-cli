@@ -11,13 +11,11 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 import datetime
-import mock
 
 from dateutil.tz import tzutc
 from botocore.compat import urlparse, parse_qs
 
-from awscli.compat import six
-from awscli.testutils import BaseAWSCommandParamsTest
+from awscli.testutils import mock, BaseAWSCommandParamsTest
 
 
 class TestGenerateDBAuthToken(BaseAWSCommandParamsTest):
@@ -25,7 +23,7 @@ class TestGenerateDBAuthToken(BaseAWSCommandParamsTest):
     prefix = 'rds generate-db-auth-token'
 
     def _urlparse(self, url):
-        if isinstance(url, six.binary_type):
+        if isinstance(url, bytes):
             # Not really necessary, but it helps to reduce noise on Python 2.x
             url = url.decode('utf8')
         return urlparse(url)
@@ -53,7 +51,7 @@ class TestGenerateDBAuthToken(BaseAWSCommandParamsTest):
         clock = datetime.datetime(2016, 11, 7, 17, 39, 33, tzinfo=tzutc())
 
         with mock.patch('datetime.datetime') as dt:
-            dt.utcnow.return_value = clock
+            dt.now.return_value = clock
             stdout, _, _ = self.run_cmd(command, expected_rc=0)
 
         expected = (
